@@ -3,6 +3,7 @@ package com.sonu.resolved.di.component;
 import com.sonu.resolved.di.PerActivity;
 import com.sonu.resolved.di.module.ActivityModule;
 import com.sonu.resolved.ui.login.LoginActivity;
+import com.sonu.resolved.ui.main.MainActivity;
 
 import dagger.Component;
 
@@ -14,4 +15,5 @@ import dagger.Component;
 @Component(modules = ActivityModule.class)
 public interface ActivityComponent {
     void inject(LoginActivity activity);
+    void inject(MainActivity activity);
 }

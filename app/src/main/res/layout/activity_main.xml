@@ -13,11 +13,14 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
+    <include layout="@layout/bottom_sheet_add_problem" />
+
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:layout_gravity="bottom|end">
+        android:layout_gravity="bottom|end"
+        android:animateLayoutChanges="true">
 
         <android.support.design.widget.FloatingActionButton
             android:id="@+id/relocateFab"
