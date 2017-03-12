@@ -1,6 +1,6 @@
 package com.sonu.resolved.ui.main;
 
-import com.sonu.resolved.models.Problem;
+import com.sonu.resolved.data.network.model.Problem;
 
 import java.util.ArrayList;
 

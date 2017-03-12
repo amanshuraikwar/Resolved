@@ -5,7 +5,7 @@ package com.sonu.resolved.ui.login;
  */
 
 public interface LoginMvpPresenter {
-    void onAttach(LoginMvpView loginMvpView);
+    void onAttach(LoginActivity loginActivity);
     void loginClicked(String username, String password);
     void signupClicked(String username, String email, String password);
 }

@@ -2,8 +2,10 @@ package com.sonu.resolved.ui.login;
 
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.support.design.widget.Snackbar;
 import android.support.design.widget.TextInputLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
@@ -13,10 +15,15 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 
+import com.sonu.resolved.MyApplication;
 import com.sonu.resolved.R;
+
+import com.sonu.resolved.di.ActivityContext;
 import com.sonu.resolved.di.component.DaggerActivityComponent;
 import com.sonu.resolved.di.module.ActivityModule;
+import com.sonu.resolved.ui.main.MainActivity;
 
 import javax.inject.Inject;
 
@@ -35,8 +42,14 @@ public class LoginActivity extends AppCompatActivity implements LoginMvpView{
     @Inject
     LoginMvpPresenter mPresenter;
 
+    private Snackbar errorSnackBar;
+
     @Inject
+    @ActivityContext
     Context mContext;
+
+    @BindView(R.id.pageTitleTv)
+    TextView pageTitleTv;
 
     @BindView(R.id.usernameEt)
     EditText usernameEt;
@@ -73,6 +86,7 @@ public class LoginActivity extends AppCompatActivity implements LoginMvpView{
 
         DaggerActivityComponent.builder()
                 .activityModule(new ActivityModule(this))
+                .applicationComponent(((MyApplication)getApplicationContext()).getApplicationComponent())
                 .build()
                 .inject(this);
 
@@ -131,11 +145,19 @@ public class LoginActivity extends AppCompatActivity implements LoginMvpView{
                 passwordTil.setErrorEnabled(false);
             }
         });
+
+        errorSnackBar = Snackbar.make(layoutParentLl, "", Snackbar.LENGTH_SHORT);
     }
 
     @OnClick(R.id.loginBtn)
     public void onLoginClick(View v) {
         Log.d(TAG,"onLoginClick");
+        pageTitleTv.setText("Login");
+
+        setUserNameError(null);
+        setEmailError(null);
+        setPasswordError(null);
+
         mPresenter.loginClicked(
                 usernameEt.getText().toString().trim(),
                 passwordEt.getText().toString().trim());
@@ -144,6 +166,12 @@ public class LoginActivity extends AppCompatActivity implements LoginMvpView{
     @OnClick(R.id.signupBtn)
     public void onSignupClick(View v) {
         Log.d(TAG,"onSignupClick");
+        pageTitleTv.setText("Signup");
+
+        setUserNameError(null);
+        setEmailError(null);
+        setPasswordError(null);
+
         mPresenter.signupClicked(
                 usernameEt.getText().toString().trim(),
                 emailEt.getText().toString().trim(),
@@ -206,5 +234,17 @@ public class LoginActivity extends AppCompatActivity implements LoginMvpView{
         usernameEt.setEnabled(true);
         emailEt.setEnabled(true);
         passwordEt.setEnabled(true);
+    }
+
+    @Override
+    public void showErrorSnackBar(String error) {
+        errorSnackBar.setText(error);
+        errorSnackBar.show();
+    }
+
+    @Override
+    public void startMainActivity() {
+        startActivity(new Intent(this, MainActivity.class));
+        finish();
     }
 }

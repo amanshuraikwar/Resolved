@@ -12,4 +12,6 @@ public interface LoginMvpView {
     void setPasswordError(String error);
     void showLoading();
     void hideLoading();
+    void showErrorSnackBar(String error);
+    void startMainActivity();
 }

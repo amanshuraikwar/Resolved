@@ -51,9 +51,7 @@
                 android:id="@+id/descriptionEt"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Description"
-                android:gravity="top"
-                android:minLines="6"/>
+                android:hint="Description" />
         </android.support.design.widget.TextInputLayout>
     </LinearLayout>
 

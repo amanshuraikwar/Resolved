@@ -5,9 +5,10 @@ import android.content.Context;
 
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationServices;
+import com.sonu.resolved.data.DataManager;
+import com.sonu.resolved.di.ActivityContext;
 import com.sonu.resolved.di.PerActivity;
 import com.sonu.resolved.ui.login.LoginMvpPresenter;
-import com.sonu.resolved.ui.login.LoginMvpView;
 import com.sonu.resolved.ui.login.LoginPresenter;
 import com.sonu.resolved.ui.main.MainMvpPresenter;
 import com.sonu.resolved.ui.main.MainPresenter;
@@ -29,6 +30,7 @@ public class ActivityModule {
 
     @Provides
     @PerActivity
+    @ActivityContext
     Context getContext() {
         return this.mActivity;
     }
@@ -47,6 +49,12 @@ public class ActivityModule {
 
     @Provides
     @PerActivity
+    LoginPresenter getLoginPresenter(DataManager dataManager) {
+        return new LoginPresenter(dataManager);
+    }
+
+    @Provides
+    @PerActivity
     GoogleApiClient getGoogleApiClient() {
         return new GoogleApiClient.Builder(mActivity)
                 .addConnectionCallbacks((GoogleApiClient.ConnectionCallbacks)mActivity)
@@ -54,5 +62,4 @@ public class ActivityModule {
                 .addApi(LocationServices.API)
                 .build();
     }
-
 }
