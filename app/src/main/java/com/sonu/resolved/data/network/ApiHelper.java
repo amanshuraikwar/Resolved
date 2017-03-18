@@ -1,5 +1,7 @@
 package com.sonu.resolved.data.network;
 
+import com.sonu.resolved.data.network.model.Problem;
+
 import io.reactivex.Observable;
 
 /**
@@ -8,4 +10,9 @@ import io.reactivex.Observable;
 
 public interface ApiHelper {
     Observable<Integer> checkUser(String username, String pasword);
+    Observable<Boolean> checkIfEmailExists(String email);
+    Observable<Boolean> checkIfUsernameExists(String username);
+    Observable<Integer> signUpUser(String username, String email, String password);
+    Observable<Problem[]> getProblems();
+    Observable<Integer> addProblem(String title, String description, double latitude, double longitude);
 }

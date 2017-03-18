@@ -49,6 +49,12 @@ public class ActivityModule {
 
     @Provides
     @PerActivity
+    MainPresenter getMainPresenter(DataManager dataManager) {
+        return new MainPresenter(dataManager);
+    }
+
+    @Provides
+    @PerActivity
     LoginPresenter getLoginPresenter(DataManager dataManager) {
         return new LoginPresenter(dataManager);
     }

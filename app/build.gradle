@@ -38,6 +38,8 @@ dependencies {
     compile "com.android.support:support-fragment:$rootProject.supportLibraryVersion"
     compile "com.google.android.gms:play-services:$rootProject.googlePlayServicesVersion"
 
+    compile "com.google.maps.android:android-maps-utils:$rootProject.googleMapsUtilsVersion"
+
     compile "com.google.dagger:dagger:$rootProject.dagger2Version"
     apt "com.google.dagger:dagger-compiler:$rootProject.dagger2Version"
     provided 'javax.annotation:jsr250-api:1.0'

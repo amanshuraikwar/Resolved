@@ -43,6 +43,8 @@ ext {
     junitVersion = '4.12'
 
     googlePlayServicesVersion = '10.2.0'
+
+    googleMapsUtilsVersion = '0.5+'
 }
 
 task clean(type: Delete) {

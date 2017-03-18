@@ -1,10 +1,12 @@
 package com.sonu.resolved.ui.login;
 
+import com.sonu.resolved.base.BaseMvpView;
+
 /**
  * Created by sonu on 3/3/17.
  */
 
-public interface LoginMvpView {
+public interface LoginMvpView extends BaseMvpView{
     void hideEmailView();
     void showEmailView();
     void setUserNameError(String error);

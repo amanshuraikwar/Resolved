@@ -42,11 +42,11 @@ public class LoginActivity extends AppCompatActivity implements LoginMvpView{
     @Inject
     LoginMvpPresenter mPresenter;
 
-    private Snackbar errorSnackBar;
-
     @Inject
     @ActivityContext
     Context mContext;
+
+    private Snackbar errorSnackBar;
 
     @BindView(R.id.pageTitleTv)
     TextView pageTitleTv;
@@ -81,7 +81,6 @@ public class LoginActivity extends AppCompatActivity implements LoginMvpView{
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         setContentView(R.layout.activity_login);
 
         DaggerActivityComponent.builder()
@@ -93,7 +92,6 @@ public class LoginActivity extends AppCompatActivity implements LoginMvpView{
         ButterKnife.bind(this);
 
         Log.i(TAG, "mPresenter="+mPresenter);
-        mPresenter.onAttach(this);
 
         usernameEt.addTextChangedListener(new TextWatcher() {
             @Override
@@ -147,6 +145,18 @@ public class LoginActivity extends AppCompatActivity implements LoginMvpView{
         });
 
         errorSnackBar = Snackbar.make(layoutParentLl, "", Snackbar.LENGTH_SHORT);
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        mPresenter.onAttach(this);
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        mPresenter.onDetach();
     }
 
     @OnClick(R.id.loginBtn)

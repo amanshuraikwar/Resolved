@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">Resolved</string>
+    <string name="preference_file_key">com.sonu.resolved.qazwsxedcrfvtgb</string>
+
+    <string name="saved_login_status">shared_pref_login_status_key</string>
+    <string name="saved_username">shared_pref_username_key</string>
+    <string name="saved_email">shared_pref_email_key</string>
 </resources>

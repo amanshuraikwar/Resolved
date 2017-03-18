@@ -4,6 +4,7 @@ import android.util.Log;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.sonu.resolved.data.network.model.Problem;
 import com.sonu.resolved.data.network.model.User;
 
 import java.io.IOException;
@@ -49,6 +50,109 @@ public class AppApiHelper implements ApiHelper{
         });
     }
 
+    @Override
+    public Observable<Boolean> checkIfEmailExists(final String email) {
+        return Observable.fromCallable(new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
+                User user = getUserInfoByEmail(email);
+
+                return user != null;
+
+            }
+        });
+    }
+
+    @Override
+    public Observable<Boolean> checkIfUsernameExists(final String username) {
+        return Observable.fromCallable(new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
+                User user = getUserInfo(username);
+
+                return user != null;
+
+            }
+        });
+    }
+
+    @Override
+    public Observable<Integer> signUpUser(final String username, final String email, final String password) {
+
+        return Observable.fromCallable(new Callable<Integer>() {
+            @Override
+            public Integer call() throws Exception {
+                return addUserToDb(username, email, password);
+            }
+        });
+    }
+
+    @Override
+    public Observable<Problem[]> getProblems() {
+        return Observable.fromCallable(new Callable<Problem[]>() {
+            @Override
+            public Problem[] call() throws Exception {
+                return getProblemsFromDb();
+            }
+        });
+    }
+
+    @Override
+    public Observable<Integer> addProblem(final String title, final String description, final double latitude, final double longitude) {
+        return Observable.fromCallable(new Callable<Integer>() {
+            @Override
+            public Integer call() throws Exception {
+                return addProblemToDb(title, description, latitude, longitude);
+            }
+        }) ;
+    }
+
+    private int addProblemToDb(String title, String description, double latitude, double longitude) throws IOException{
+        String url = ApiEndpoints.ADD_PROBLEM;
+        Request request = RequestGenerator.put(url,
+                "{\"title\" : \""+title
+                        +"\", \"desc\" : \""+description
+                        +"\", \"latitude\" : "+latitude
+                        +", \"longitude\" : "+longitude+"}");
+
+        String body = mRequestHandler.request(request);
+
+        Log.i(TAG, "addProblemToDb():response-body:"+body);
+
+        return 1;
+    }
+
+    private Problem[] getProblemsFromDb() throws IOException{
+        String url = ApiEndpoints.GET_PROBLEMS;
+        Request request = RequestGenerator.get(url);
+        String body = mRequestHandler.request(request);
+        Log.i(TAG, "getProblemsFromDb():response-body:"+body);
+
+        if(body.equals("null")) {
+            return null;
+        }
+
+        Problem[] problems = new Gson().fromJson(body, Problem[].class);
+
+        //Log.i(TAG, "getUserInfo():user:"+problems[0]);
+
+        return problems;
+    }
+
+    private int addUserToDb(String username, String email, String password) throws IOException {
+        String url = ApiEndpoints.SIGN_UP_USER;
+        Request request = RequestGenerator.put(url,
+                "{\"username\" : \""+username
+                        +"\", \"email\" : \""+email
+                        +"\", \"password\" : \""+password+"\"}");
+
+        String body = mRequestHandler.request(request);
+
+        Log.i(TAG, "addUserToDb():response-body:"+body);
+
+        return 1;
+    }
+
     private User getUserInfo(String username) throws IOException{
         String url = String.format(ApiEndpoints.GET_USER_INFO, username);
         Request request = RequestGenerator.get(url);
@@ -62,6 +166,23 @@ public class AppApiHelper implements ApiHelper{
         User[] users = new Gson().fromJson(body, User[].class);
 
         Log.i(TAG, "getUserInfo():user:"+users[0]);
+
+        return users[0];
+    }
+
+    private User getUserInfoByEmail(String email) throws IOException{
+        String url = String.format(ApiEndpoints.GET_USER_INFO_BY_EMAIL, email);
+        Request request = RequestGenerator.get(url);
+        String body = mRequestHandler.request(request);
+        Log.i(TAG, "getUserInfoNyEmail():response-body:"+body);
+
+        if(body.equals("null")) {
+            return null;
+        }
+
+        User[] users = new Gson().fromJson(body, User[].class);
+
+        Log.i(TAG, "getUserInfoNyEmail():user:"+users[0]);
 
         return users[0];
     }

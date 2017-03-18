@@ -7,15 +7,89 @@
     android:layout_height="match_parent"
     tools:context="com.sonu.resolved.ui.main.MainActivity">
 
-    <fragment
-        android:id="@+id/problemsMap"
-        android:name="com.google.android.gms.maps.SupportMapFragment"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+    <!--<LinearLayout-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="match_parent"-->
+        <!--android:orientation="vertical"-->
+        <!--android:animateLayoutChanges="true">-->
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="1">
+
+            <fragment
+                android:id="@+id/problemsMap"
+                android:name="com.google.android.gms.maps.SupportMapFragment"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_add_location_white_36dp"
+                android:tint="@color/darkGrey"
+                android:layout_marginBottom="18dp"/>
+        </FrameLayout>
+
+        <!--<LinearLayout-->
+            <!--android:id="@+id/addProblemLayout"-->
+            <!--android:layout_width="match_parent"-->
+            <!--android:layout_height="match_parent"-->
+            <!--android:orientation="vertical"-->
+            <!--android:gravity="center_vertical"-->
+            <!--android:background="@color/white"-->
+            <!--android:layout_weight="1"-->
+            <!--android:visibility="gone">-->
+
+            <!--<android.support.design.widget.TextInputLayout-->
+                <!--android:id="@+id/problemTitleTilx"-->
+                <!--android:layout_width="match_parent"-->
+                <!--android:layout_height="wrap_content"-->
+                <!--android:layout_marginStart="24dp"-->
+                <!--android:layout_marginEnd="24dp"-->
+                <!--android:layout_marginTop="24dp"-->
+                <!--android:layout_marginBottom="8dp"-->
+                <!--app:hintEnabled="false"-->
+                <!--android:visibility="visible">-->
+
+                <!--<EditText-->
+                    <!--android:id="@+id/problemTitleEtx"-->
+                    <!--android:layout_width="match_parent"-->
+                    <!--android:layout_height="wrap_content"-->
+                    <!--android:hint="Title"-->
+                    <!--android:textSize="24sp"-->
+                    <!--android:inputType="text"-->
+                    <!--android:maxLines="1"/>-->
+            <!--</android.support.design.widget.TextInputLayout>-->
+
+            <!--<android.support.design.widget.TextInputLayout-->
+                <!--android:id="@+id/problemDescriptionTilx"-->
+                <!--android:layout_width="match_parent"-->
+                <!--android:layout_height="wrap_content"-->
+                <!--android:layout_marginStart="24dp"-->
+                <!--android:layout_marginEnd="24dp"-->
+                <!--android:layout_marginTop="8dp"-->
+                <!--android:layout_marginBottom="24dp"-->
+                <!--app:hintEnabled="false"-->
+                <!--android:visibility="visible">-->
+
+                <!--<EditText-->
+                    <!--android:id="@+id/problemDescriptionEtx"-->
+                    <!--android:layout_width="match_parent"-->
+                    <!--android:layout_height="wrap_content"-->
+                    <!--android:hint="Description"-->
+                    <!--android:textSize="16sp"-->
+                    <!--android:textStyle="bold"/>-->
+            <!--</android.support.design.widget.TextInputLayout>-->
+        <!--</LinearLayout>-->
+    <!--</LinearLayout>-->
 
     <include layout="@layout/bottom_sheet_add_problem" />
 
     <LinearLayout
+        android:id="@+id/fabLayoutLl"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="vertical"

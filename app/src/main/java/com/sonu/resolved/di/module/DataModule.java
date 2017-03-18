@@ -1,10 +1,15 @@
 package com.sonu.resolved.di.module;
 
+import android.content.Context;
+
 import com.sonu.resolved.data.AppDataManager;
 import com.sonu.resolved.data.DataManager;
 import com.sonu.resolved.data.network.ApiHelper;
 import com.sonu.resolved.data.network.AppApiHelper;
 import com.sonu.resolved.data.network.RequestHandler;
+import com.sonu.resolved.data.prefs.AppPreferenceHelper;
+import com.sonu.resolved.data.prefs.PreferenceHelper;
+import com.sonu.resolved.di.ApplicationContext;
 
 import javax.inject.Singleton;
 
@@ -25,8 +30,8 @@ public class DataModule {
 
     @Provides
     @Singleton
-    AppDataManager getAppDataManager(ApiHelper apiHelper) {
-        return new AppDataManager(apiHelper);
+    AppDataManager getAppDataManager(ApiHelper apiHelper, PreferenceHelper preferenceHelper) {
+        return new AppDataManager(apiHelper, preferenceHelper);
     }
 
     @Provides
@@ -39,5 +44,17 @@ public class DataModule {
     @Singleton
     AppApiHelper getAppApiHelper(RequestHandler requestHandler) {
         return new AppApiHelper(requestHandler);
+    }
+
+    @Provides
+    @Singleton
+    PreferenceHelper getPreferenceHelper(AppPreferenceHelper appPreferenceHelper) {
+        return appPreferenceHelper;
+    }
+
+    @Provides
+    @Singleton
+    AppPreferenceHelper getAppPreferenceHelper(@ApplicationContext Context context) {
+        return new AppPreferenceHelper(context);
     }
 }

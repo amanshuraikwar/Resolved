@@ -41,4 +41,29 @@ public class Checker {
 
         return null;
     }
+
+    public static String problemTitle(String value) {
+        if(value == null) {
+            return EMPTY_MESSAGE;
+        }
+
+        if(value.equals("")) {
+            return EMPTY_MESSAGE;
+        }
+
+        return null;
+    }
+
+    public static String problemDescription(String value) {
+        if(value == null) {
+            return EMPTY_MESSAGE;
+        }
+
+        if(value.equals("")) {
+            return EMPTY_MESSAGE;
+        }
+
+        return null;
+    }
 }
+

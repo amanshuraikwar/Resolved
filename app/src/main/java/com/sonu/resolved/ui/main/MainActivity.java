@@ -1,8 +1,11 @@
 package com.sonu.resolved.ui.main;
 
 import android.Manifest;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.IntentSender;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -13,6 +16,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.BottomSheetBehavior;
 import android.support.design.widget.FloatingActionButton;
+import android.support.design.widget.TextInputLayout;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -20,20 +24,32 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.PendingResult;
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.common.api.Status;
+import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.LocationSettingsRequest;
+import com.google.android.gms.location.LocationSettingsResult;
+import com.google.android.gms.location.LocationSettingsStates;
+import com.google.android.gms.location.LocationSettingsStatusCodes;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.maps.android.clustering.ClusterManager;
 import com.sonu.resolved.MyApplication;
 import com.sonu.resolved.R;
 
@@ -41,6 +57,7 @@ import com.sonu.resolved.di.ActivityContext;
 import com.sonu.resolved.di.component.DaggerActivityComponent;
 import com.sonu.resolved.di.module.ActivityModule;
 import com.sonu.resolved.data.network.model.Problem;
+import com.sonu.resolved.ui.login.LoginActivity;
 
 import java.util.ArrayList;
 import java.util.concurrent.Callable;
@@ -71,10 +88,22 @@ public class MainActivity
         OnMapReadyCallback,
         GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener,
-        MainMvpView{
+        MainMvpView,
+        ResultCallback<LocationSettingsResult>{
 
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final int MY_PERMISSIONS_REQUEST_ACCESS_LOCATION = 100;
+    private static final int LOCATION_SETTINGS_CHANGE_REQUEST = 101;
+
+    private Bitmap mDotMarkerBitmap;
+    private GoogleMap problemsMap;
+    private Observable<Location> locationObservable;
+    private Observer<Location> myLocationObserver;
+    private BottomSheetBehavior addProblemBottomSheetBehavior;
+    private AlertDialog permissionExplanationAlertDialog;
+
+    private ProgressDialog progressDialog;
+    private ClusterManager<Problem> mClusterManager;
 
     @Inject
     MainMvpPresenter mPresenter;
@@ -85,13 +114,6 @@ public class MainActivity
 
     @Inject
     GoogleApiClient mGoogleApiClient;
-
-    private Bitmap mDotMarkerBitmap;
-    private GoogleMap problemsMap;
-    private Observable<Location> locationObservable;
-    private Observer<Location> myLocationObserver;
-    private BottomSheetBehavior addProblemBottomSheetBehavior;
-    private AlertDialog permissionExplanationAlertDialog;
 
     @BindView(R.id.addProblemFab)
     FloatingActionButton addProblemFab;
@@ -108,6 +130,21 @@ public class MainActivity
     @BindView(R.id.cancelBtn)
     Button cancelBtn;
 
+    @BindView(R.id.problemTitleEt)
+    EditText problemTitleEt;
+
+    @BindView(R.id.problemDescriptionEt)
+    EditText problemDescriptionEt;
+
+    @BindView(R.id.problemTitleTil)
+    TextInputLayout problemTitleTil;
+
+    @BindView(R.id.problemDescriptionTil)
+    TextInputLayout problemDescriptionTil;
+
+    @BindView(R.id.fabLayoutLl)
+    LinearLayout fabLayoutLl;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -119,10 +156,9 @@ public class MainActivity
                 .build()
                 .inject(this);
 
-        ButterKnife.bind(this);
-
         Log.i(TAG, "mPresenter="+mPresenter);
-        mPresenter.onAttach(this);
+
+        ButterKnife.bind(this);
 
         addProblemBottomSheetBehavior = BottomSheetBehavior.from(addProblemRl);
 
@@ -134,16 +170,32 @@ public class MainActivity
 
             @Override
             public void onSlide(@NonNull View bottomSheet, float slideOffset) {
-//                Log.d(TAG, "onSlide():offset="+slideOffset);
-                addProblemFab.animate().alpha(1-slideOffset).scaleX(1-slideOffset).scaleY(1-slideOffset).setDuration(0).start();
-                relocateFab.animate().alpha(1-slideOffset).scaleX(1-slideOffset).scaleY(1-slideOffset).setDuration(0).start();
+                if(slideOffset == 1) {
+                    fabLayoutLl.setVisibility(View.GONE);
+                } else {
+                    fabLayoutLl.setVisibility(View.VISIBLE);
+                }
+
+                addProblemFab
+                        .animate()
+                        .alpha(1-slideOffset)
+                        .scaleX(1-slideOffset)
+                        .scaleY(1-slideOffset)
+                        .setDuration(0)
+                        .start();
+
+                relocateFab
+                        .animate()
+                        .alpha(1-slideOffset)
+                        .scaleX(1-slideOffset)
+                        .scaleY(1-slideOffset)
+                        .setDuration(0)
+                        .start();
             }
         });
 
         SupportMapFragment problemsMapFragment =
-                (SupportMapFragment)
-                        getSupportFragmentManager()
-                                .findFragmentById(R.id.problemsMap);
+                (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.problemsMap);
 
         initialiseMyLocationBitmap();
         initialiseMyLocationRxStuff();
@@ -165,7 +217,11 @@ public class MainActivity
         saveProblemBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                mPresenter.saveProblemBtnOnClick();
+                mPresenter.saveProblemBtnOnClick(
+                        problemsMap.getCameraPosition().target.latitude,
+                        problemsMap.getCameraPosition().target.longitude,
+                        problemTitleEt.getText().toString().trim(),
+                        problemDescriptionEt.getText().toString().trim());
             }
         });
 
@@ -176,20 +232,245 @@ public class MainActivity
             }
         });
 
-        permissionExplanationAlertDialog =
-                new AlertDialog
-                        .Builder(MainActivity.this)
-                        .setMessage("We need Location Permissions to show Problems around you. Please provide us permissions.")
-                        .setPositiveButton("Provide Permissions", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                askPermissions();
-                                dialog.dismiss();
-                            }
-                        })
-                        .create();
+        initialiseDialogs();
 
         problemsMapFragment.getMapAsync(this);
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        mPresenter.onAttach(this);
+    }
+
+    @Override
+    protected void onStop() {
+        if (mGoogleApiClient.isConnected()) {
+            mGoogleApiClient.disconnect();
+        }
+        mPresenter.onDetach();
+        super.onStop();
+    }
+
+    @Override
+    public void focusCameraOn(double lat, double lng) {
+        CameraUpdate cameraUpdate =
+                CameraUpdateFactory
+                        .newLatLngZoom(
+                                new LatLng(
+                                        lat,
+                                        lng
+                                ),
+                                15
+                        );
+
+        problemsMap.animateCamera(cameraUpdate);
+    }
+
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        switch (requestCode) {
+            case MY_PERMISSIONS_REQUEST_ACCESS_LOCATION:
+                if (grantResults.length > 0) {
+
+                    for (int grantResult : grantResults) {
+                        if(grantResult != PackageManager.PERMISSION_GRANTED) {
+                            return;
+                        }
+                    }
+
+                    relocateUser();
+                }
+                break;
+        }
+    }
+
+    @Override
+    public void onMapReady(GoogleMap googleMap) {
+        Log.d(TAG, "onMapReady():called");
+        problemsMap = googleMap;
+        mGoogleApiClient.connect();
+
+        mClusterManager = new ClusterManager<Problem>(MainActivity.this, problemsMap);
+
+        problemsMap.setOnCameraIdleListener(mClusterManager);
+        problemsMap.setOnMarkerClickListener(mClusterManager);
+
+        problemsMap.setOnCameraMoveListener(new GoogleMap.OnCameraMoveListener() {
+            @Override
+            public void onCameraMove() {
+                CameraPosition cameraPosition = problemsMap.getCameraPosition();
+                if(cameraPosition.zoom >= 15.0) {//on streets level
+                    showAddProblemFab();
+                } else {
+                    hideAddProblemFab();
+                }
+            }
+        });
+    }
+
+    @Override
+    public void onConnected(@Nullable Bundle bundle) {
+        Log.d(TAG, "onConnected():called");
+        mPresenter.onGoogleApiConnected();
+    }
+
+    @Override
+    public void onConnectionSuspended(int i) {
+
+    }
+
+    @Override
+    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+
+    }
+
+    @Override
+    public void relocateUser() {
+        Log.d(TAG, "relocateUser():called");
+        checkLocationSettingsStatus();
+    }
+
+    @Override
+    public void displayProblems(ArrayList<Problem> problems) {
+        if(problems != null && problemsMap != null) {
+
+            if(problems.size() == 0) {
+                Toast.makeText(MainActivity.this, "Yay, no problems around you!", Toast.LENGTH_SHORT)
+                        .show();
+            } else {
+                for (Problem problem : problems) {
+                    problemsMap.addMarker(
+                            new MarkerOptions()
+                                    .position(
+                                            new LatLng(
+                                                    problem.getLatitude(),
+                                                    problem.getLongitude()
+                                            )
+                                    )
+                    );
+                }
+            }
+        }
+    }
+
+    @Override
+    public void openAddProblemSheet() {
+        addProblemBottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
+    }
+
+    @Override
+    public void closeAddProblemSheet() {
+        addProblemBottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+    }
+
+    @Override
+    public void hideAddProblemFab() {
+        addProblemFab.setVisibility(View.GONE);
+    }
+
+    @Override
+    public void showAddProblemFab() {
+        addProblemFab.setVisibility(View.VISIBLE);
+    }
+
+    @Override
+    public void startLoginActivity() {
+        startActivity(new Intent(MainActivity.this, LoginActivity.class));
+        finish();
+    }
+
+    @Override
+    public void hideFabs() {
+        addProblemFab.setVisibility(View.GONE);
+        relocateFab.setVisibility(View.GONE);
+    }
+
+    @Override
+    public void showFabs() {
+        addProblemFab.setVisibility(View.VISIBLE);
+        relocateFab.setVisibility(View.VISIBLE);
+    }
+
+    @Override
+    public void addMarkerOnMap(Problem problem) {
+        mClusterManager.addItem(problem);
+    }
+
+    @Override
+    public void setProblemTitleError(String error) {
+        if(error == null) {
+            problemTitleTil.setErrorEnabled(false);
+        } else {
+            problemTitleTil.setError(error);
+        }
+    }
+
+    @Override
+    public void setProblemDescriptionError(String error) {
+        if(error == null) {
+            problemDescriptionTil.setErrorEnabled(false);
+        } else {
+            problemDescriptionTil.setError(error);
+        }
+    }
+
+    @Override
+    public void showLoading() {
+        progressDialog.show();
+    }
+
+    @Override
+    public void hideLoading() {
+        progressDialog.dismiss();
+    }
+
+    @Override
+    public void onResult(@NonNull LocationSettingsResult locationSettingsResult) {
+        final Status status = locationSettingsResult.getStatus();
+
+        switch (status.getStatusCode()) {
+            case LocationSettingsStatusCodes.SUCCESS:
+                locationObservable
+                        .subscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(myLocationObserver);
+                break;
+            case LocationSettingsStatusCodes.RESOLUTION_REQUIRED:
+                try {
+                    status.startResolutionForResult(
+                            MainActivity.this,
+                            LOCATION_SETTINGS_CHANGE_REQUEST);
+                } catch (IntentSender.SendIntentException e) {
+                    Log.e(TAG, "onResult():error occurred while startResolutionForResult()");
+                    e.printStackTrace();
+                }
+                break;
+            case LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE:
+                Log.i(TAG,"onResult():LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE");
+                break;
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        Log.d(TAG, "onActivityResult():called");
+        switch (requestCode) {
+            case LOCATION_SETTINGS_CHANGE_REQUEST:
+                Log.d(TAG, "onActivityResult():LOCATION_SETTINGS_CHANGE_REQUEST");
+                Log.i(TAG, "onActivityResult():LOCATION_SETTINGS_CHANGE_REQUEST:resultCode="
+                        +resultCode);
+                if(resultCode == 0) {
+                    //do nothing
+                } else if(resultCode == -1) {
+                    locationObservable
+                            .subscribeOn(Schedulers.io())
+                            .observeOn(AndroidSchedulers.mainThread())
+                            .subscribe(myLocationObserver);
+                }
+                break;
+        }
     }
 
     private void askPermissions() {
@@ -216,6 +497,24 @@ public class MainActivity
         shape.draw(canvas);
     }
 
+    private void initialiseDialogs() {
+        permissionExplanationAlertDialog =
+                new AlertDialog
+                        .Builder(MainActivity.this)
+                        .setMessage("We need Location Permissions to show Problems around you. Please provide us permissions.")
+                        .setPositiveButton("Provide Permissions", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                askPermissions();
+                                dialog.dismiss();
+                            }
+                        })
+                        .create();
+
+        progressDialog = new ProgressDialog(this);
+        progressDialog.setCancelable(false);
+    }
+
     private void initialiseMyLocationRxStuff() {
 
         locationObservable = Observable.fromCallable(
@@ -238,17 +537,10 @@ public class MainActivity
                 Log.i(TAG, "onNext():locationValue="+value);
 
                 if(value != null) {
-                    CameraUpdate cameraUpdate =
-                            CameraUpdateFactory
-                                    .newLatLngZoom(
-                                            new LatLng(
-                                                    value.getLatitude(),
-                                                    value.getLongitude()
-                                            ),
-                                            10
-                                    );
 
-                    problemsMap.animateCamera(cameraUpdate);
+                    focusCameraOn(value.getLatitude(), value.getLongitude());
+
+                    mClusterManager.clearItems();
 
                     problemsMap.addMarker(
                             new MarkerOptions()
@@ -267,8 +559,16 @@ public class MainActivity
 
             @Override
             public void onError(Throwable e) {
-                Log.d(TAG, "onError():called");
-                handlePermissionsNotGranted();
+                Log.e(TAG, "onError():called");
+                e.printStackTrace();
+
+                if(e instanceof NullPointerException) {
+                    //do nothing
+                } else {
+                    if(e.getMessage().equals("0")) {
+                        handlePermissionsNotGranted();
+                    }
+                }
             }
 
             @Override
@@ -293,130 +593,47 @@ public class MainActivity
         }
     }
 
-    private Location getCurrentLocation() {
+    private void checkLocationSettingsStatus() {
+        LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder()
+                .addLocationRequest(new LocationRequest());
+
+        PendingResult<LocationSettingsResult> result =
+                LocationServices.SettingsApi.checkLocationSettings(mGoogleApiClient,
+                        builder.build());
+
+        result.setResultCallback(MainActivity.this);
+    }
+
+    private Location getCurrentLocation() throws Exception{
         Log.d(TAG, "getCurrentLocation():called");
 
+        Location currentLocation = getCurLatLon();
+
+        Log.i(TAG, "getCurrentLocation():currentLocation:"+currentLocation);
+
+        return currentLocation;
+    }
+
+    private Location getCurLatLon() throws Exception{
         if (
                 ActivityCompat.checkSelfPermission(
                         this,
                         Manifest.permission.ACCESS_FINE_LOCATION
                 ) != PackageManager.PERMISSION_GRANTED
 
-                &&
+                        &&
 
-                ActivityCompat.checkSelfPermission(
-                        this,
-                        Manifest.permission.ACCESS_COARSE_LOCATION
-                ) != PackageManager.PERMISSION_GRANTED) {
+                        ActivityCompat.checkSelfPermission(
+                                this,
+                                Manifest.permission.ACCESS_COARSE_LOCATION
+                        ) != PackageManager.PERMISSION_GRANTED) {
 
-            return null;
+            Log.e(TAG, "getCurrentLocation():permission not granted");
+            throw new Exception("0");
         }
 
         return LocationServices
                 .FusedLocationApi
                 .getLastLocation(mGoogleApiClient);
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        switch (requestCode) {
-            case MY_PERMISSIONS_REQUEST_ACCESS_LOCATION:
-                if (grantResults.length > 0) {
-
-                    for (int grantResult : grantResults) {
-                        if(grantResult != PackageManager.PERMISSION_GRANTED) {
-                            break;
-                        }
-                    }
-                    relocateUser();
-                }
-                break;
-        }
-    }
-
-
-    @Override
-    protected void onStop() {
-        if (mGoogleApiClient.isConnected()) {
-            mGoogleApiClient.disconnect();
-        }
-        super.onStop();
-    }
-
-    @Override
-    public void onMapReady(GoogleMap googleMap) {
-        Log.d(TAG, "onMapReady():called");
-        problemsMap = googleMap;
-        mGoogleApiClient.connect();
-    }
-
-    @Override
-    public void onConnected(@Nullable Bundle bundle) {
-        Log.d(TAG, "onConnected():called");
-        mPresenter.onGoogleApiConnected();
-    }
-
-    @Override
-    public void onConnectionSuspended(int i) {
-
-    }
-
-    @Override
-    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
-
-    }
-
-    @Override
-    public void relocateUser() {
-        Log.d(TAG, "relocateUser():called");
-        locationObservable
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(myLocationObserver);
-    }
-
-    @Override
-    public void displayProblems(ArrayList<Problem> problems) {
-        if(problems != null && problemsMap != null) {
-
-            if(problems.size() == 0) {
-                Toast.makeText(MainActivity.this, "Yay, no problems around you!", Toast.LENGTH_SHORT)
-                        .show();
-            } else {
-                for (Problem problem : problems) {
-                    problemsMap.addMarker(
-                            new MarkerOptions()
-                                    .position(null
-//                                            new LatLng(
-//                                                    problem.getLatitude(),
-//                                                    problem.getLongitude()
-//                                            )
-                                    )
-                    );
-                }
-            }
-        }
-    }
-
-    @Override
-    public void openAddProblemSheet() {
-        addProblemBottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
-    }
-
-    @Override
-    public void closeAddProblemSheet() {
-        addProblemBottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
-    }
-
-    @Override
-    public void hideFabs() {
-        addProblemFab.setVisibility(View.GONE);
-        relocateFab.setVisibility(View.GONE);
-    }
-
-    @Override
-    public void showFabs() {
-        addProblemFab.setVisibility(View.VISIBLE);
-        relocateFab.setVisibility(View.VISIBLE);
     }
 }
