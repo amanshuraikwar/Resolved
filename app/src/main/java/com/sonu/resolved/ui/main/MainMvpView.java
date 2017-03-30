@@ -25,4 +25,5 @@ public interface MainMvpView extends BaseMvpView{
     void hideAddProblemFab();
     void showAddProblemFab();
     void startLoginActivity();
+    void clusterMarkers();
 }

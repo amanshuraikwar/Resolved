@@ -18,9 +18,12 @@ import android.support.design.widget.BottomSheetBehavior;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.TextInputLayout;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.util.SparseArrayCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -48,6 +51,7 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.maps.android.clustering.ClusterManager;
 import com.sonu.resolved.MyApplication;
@@ -58,6 +62,7 @@ import com.sonu.resolved.di.component.DaggerActivityComponent;
 import com.sonu.resolved.di.module.ActivityModule;
 import com.sonu.resolved.data.network.model.Problem;
 import com.sonu.resolved.ui.login.LoginActivity;
+import com.sonu.resolved.ui.problem.ProblemActivity;
 
 import java.util.ArrayList;
 import java.util.concurrent.Callable;
@@ -172,6 +177,9 @@ public class MainActivity
             public void onSlide(@NonNull View bottomSheet, float slideOffset) {
                 if(slideOffset == 1) {
                     fabLayoutLl.setVisibility(View.GONE);
+                } else if(slideOffset == 0){
+                    problemTitleEt.setText("");
+                    problemDescriptionEt.setText("");
                 } else {
                     fabLayoutLl.setVisibility(View.VISIBLE);
                 }
@@ -203,7 +211,22 @@ public class MainActivity
         addProblemFab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                mPresenter.addProblemFabOnClick();
+                CameraPosition cameraPosition = problemsMap.getCameraPosition();
+                if(cameraPosition.zoom < 15) {
+                    CameraUpdate cameraUpdate =
+                            CameraUpdateFactory
+                                    .newLatLngZoom(
+                                            new LatLng(
+                                                    problemsMap.getCameraPosition().target.latitude,
+                                                    problemsMap.getCameraPosition().target.longitude
+                                            ),
+                                            15
+                                    );
+
+                    problemsMap.animateCamera(cameraUpdate);
+                } else {
+                    mPresenter.addProblemFabOnClick();
+                }
             }
         });
 
@@ -235,6 +258,42 @@ public class MainActivity
         initialiseDialogs();
 
         problemsMapFragment.getMapAsync(this);
+
+        problemTitleEt.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                problemTitleTil.setError(null);
+                problemTitleTil.setErrorEnabled(false);
+            }
+        });
+
+        problemDescriptionEt.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                problemDescriptionTil.setError(null);
+                problemDescriptionTil.setErrorEnabled(false);
+            }
+        });
     }
 
     @Override
@@ -294,18 +353,39 @@ public class MainActivity
 
         mClusterManager = new ClusterManager<Problem>(MainActivity.this, problemsMap);
 
+        problemsMap.getUiSettings().setMapToolbarEnabled(false);
+        problemsMap.getUiSettings().setZoomControlsEnabled(false);
         problemsMap.setOnCameraIdleListener(mClusterManager);
         problemsMap.setOnMarkerClickListener(mClusterManager);
+        problemsMap.setOnInfoWindowClickListener(mClusterManager);
 
-        problemsMap.setOnCameraMoveListener(new GoogleMap.OnCameraMoveListener() {
+//        problemsMap.setOnCameraMoveListener(new GoogleMap.OnCameraMoveListener() {
+//            @Override
+//            public void onCameraMove() {
+//                CameraPosition cameraPosition = problemsMap.getCameraPosition();
+//                if(cameraPosition.zoom >= 15.0) {//on streets level
+//                    showAddProblemFab();
+//                } else {
+//                    hideAddProblemFab();
+//                }
+//            }
+//        });
+
+        mClusterManager.setOnClusterItemInfoWindowClickListener(new ClusterManager.OnClusterItemInfoWindowClickListener<Problem>() {
             @Override
-            public void onCameraMove() {
-                CameraPosition cameraPosition = problemsMap.getCameraPosition();
-                if(cameraPosition.zoom >= 15.0) {//on streets level
-                    showAddProblemFab();
-                } else {
-                    hideAddProblemFab();
-                }
+            public void onClusterItemInfoWindowClick(Problem problem) {
+                Log.d(TAG, "onClusterItemInfoWindowClick():clicked");
+                Log.i(TAG, "onClusterItemInfoWindowClick():problem="+problem);
+
+                int pid = problem.getPid();
+                Intent intent = new Intent(MainActivity.this, ProblemActivity.class);
+                Bundle bundle = new Bundle();
+                bundle.putInt("pid", pid);
+                bundle.putString("title", problem.getTitle());
+                bundle.putString("description", problem.getDescription());
+                intent.putExtras(bundle);
+
+                startActivity(intent);
             }
         });
     }
@@ -379,6 +459,11 @@ public class MainActivity
     public void startLoginActivity() {
         startActivity(new Intent(MainActivity.this, LoginActivity.class));
         finish();
+    }
+
+    @Override
+    public void clusterMarkers() {
+        mClusterManager.cluster();
     }
 
     @Override

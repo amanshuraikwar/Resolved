@@ -1,6 +1,7 @@
 package com.sonu.resolved.data;
 
 import com.sonu.resolved.data.network.ApiHelper;
+import com.sonu.resolved.data.network.model.Comment;
 import com.sonu.resolved.data.network.model.Problem;
 import com.sonu.resolved.data.prefs.PreferenceHelper;
 
@@ -48,6 +49,16 @@ public class AppDataManager implements DataManager{
     @Override
     public Observable<Integer> addProblem(String title, String description, double latitude, double longitude) {
         return mApiHelper.addProblem(title, description, latitude, longitude);
+    }
+
+    @Override
+    public Observable<Integer> addComment(String pid, String username, String commentText, String date, String time) {
+        return mApiHelper.addComment(pid, username, commentText, date, time);
+    }
+
+    @Override
+    public Observable<Comment[]> getComments(int pid) {
+        return mApiHelper.getComments(pid);
     }
 
     @Override

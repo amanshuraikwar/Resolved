@@ -31,6 +31,8 @@ public class AppPreferenceHelper implements PreferenceHelper{
     @Override
     public void logInUser(String username, String email) {
         setLoginStatus(true);
+        saveUsername(username);
+        saveEmail(email);
     }
 
     @Override

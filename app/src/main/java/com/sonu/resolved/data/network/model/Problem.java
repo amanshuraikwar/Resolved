@@ -2,15 +2,18 @@ package com.sonu.resolved.data.network.model;
 
 import com.google.android.gms.maps.model.LatLng;
 import com.google.maps.android.clustering.ClusterItem;
+import com.sonu.resolved.ui.problem.adapter.TypeFactory;
+import com.sonu.resolved.ui.problem.adapter.Visitable;
 
 /**
  * Created by sonu on 7/3/17.
  */
 
-public class Problem implements ClusterItem {
+public class Problem implements ClusterItem, Visitable {
     private double latitude, longitude;
     private String title;
     private String description;
+    private int pid;
 
     public double getLatitude() {
         return latitude;
@@ -54,13 +57,27 @@ public class Problem implements ClusterItem {
         this.description = description;
     }
 
+    public int getPid() {
+        return pid;
+    }
+
+    public void setPid(int pid) {
+        this.pid = pid;
+    }
+
     @Override
     public String toString() {
         return "Problem{" +
-                "latitude=" + latitude +
+                "pid=" + pid +
+                ", latitude=" + latitude +
                 ", longitude=" + longitude +
                 ", title='" + title + '\'' +
                 ", description='" + description + '\'' +
                 '}';
+    }
+
+    @Override
+    public int type(TypeFactory typeFactory) {
+        return 0;
     }
 }

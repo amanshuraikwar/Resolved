@@ -66,6 +66,7 @@ public class MainPresenter extends BasePresenter<MainMvpView> implements MainMvp
                             Log.i(TAG, problem.toString());
                             mMvpView.addMarkerOnMap(problem);
                         }
+                        mMvpView.clusterMarkers();
                     }
 
                     @Override

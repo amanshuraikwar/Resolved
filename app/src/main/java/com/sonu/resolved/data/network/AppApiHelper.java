@@ -4,6 +4,7 @@ import android.util.Log;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.sonu.resolved.data.network.model.Comment;
 import com.sonu.resolved.data.network.model.Problem;
 import com.sonu.resolved.data.network.model.User;
 
@@ -77,7 +78,9 @@ public class AppApiHelper implements ApiHelper{
     }
 
     @Override
-    public Observable<Integer> signUpUser(final String username, final String email, final String password) {
+    public Observable<Integer> signUpUser(final String username,
+                                          final String email,
+                                          final String password) {
 
         return Observable.fromCallable(new Callable<Integer>() {
             @Override
@@ -98,7 +101,10 @@ public class AppApiHelper implements ApiHelper{
     }
 
     @Override
-    public Observable<Integer> addProblem(final String title, final String description, final double latitude, final double longitude) {
+    public Observable<Integer> addProblem(final String title,
+                                          final String description,
+                                          final double latitude,
+                                          final double longitude) {
         return Observable.fromCallable(new Callable<Integer>() {
             @Override
             public Integer call() throws Exception {
@@ -107,7 +113,71 @@ public class AppApiHelper implements ApiHelper{
         }) ;
     }
 
-    private int addProblemToDb(String title, String description, double latitude, double longitude) throws IOException{
+    @Override
+    public Observable<Integer> addComment(final String pid,
+                                          final String username,
+                                          final String commentText,
+                                          final String date,
+                                          final String time) {
+        return Observable.fromCallable(new Callable<Integer>() {
+            @Override
+            public Integer call() throws Exception {
+                return addProblemToDb(pid, username, commentText, date, time);
+            }
+        }) ;
+    }
+
+    @Override
+    public Observable<Comment[]> getComments(final int pid) {
+        return Observable.fromCallable(new Callable<Comment[]>() {
+            @Override
+            public Comment[] call() throws Exception {
+                return getCommentsFromDb(pid);
+            }
+        }) ;
+    }
+
+    private Comment[] getCommentsFromDb(int pid) throws IOException{
+        String url = String.format(ApiEndpoints.GET_COMMENTS, pid);
+        Request request = RequestGenerator.get(url);
+        String body = mRequestHandler.request(request);
+        Log.i(TAG, "getCommentsFromDb():response-body:"+body);
+
+        if(body.equals("null")) {
+            return null;
+        }
+
+        Comment[] comments = new Gson().fromJson(body, Comment[].class);
+
+        //Log.i(TAG, "getUserInfo():user:"+problems[0]);
+
+        return comments;
+    }
+
+    private int addProblemToDb(String pid,
+                               String username,
+                               String commentText,
+                               String date,
+                               String time) throws IOException{
+        String url = ApiEndpoints.ADD_COMMENT;
+        Request request = RequestGenerator.put(url,
+                "{\"pid\" : "+pid
+                        +", \"username\" : \""+username
+                        +"\", \"commentText\" : \""+ commentText
+                        +"\", \"date\" : \""+ date
+                        +"\", \"time\" : \""+time+"\"}");
+
+        String body = mRequestHandler.request(request);
+
+        Log.i(TAG, "addProblemToDb():response-body:"+body);
+
+        return 1;
+    }
+
+    private int addProblemToDb(String title,
+                               String description,
+                               double latitude,
+                               double longitude) throws IOException{
         String url = ApiEndpoints.ADD_PROBLEM;
         Request request = RequestGenerator.put(url,
                 "{\"title\" : \""+title

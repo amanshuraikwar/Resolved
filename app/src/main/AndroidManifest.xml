@@ -24,7 +24,8 @@
 
         <activity
             android:name=".ui.main.MainActivity"
-            android:theme="@style/AppTheme.NoActionBar.TransparentStatusBar">
+            android:theme="@style/AppTheme.NoActionBar.TransparentStatusBar"
+            android:launchMode="singleTop">
 
             <intent-filter>
 
@@ -38,6 +39,12 @@
         <activity
             android:name=".ui.login.LoginActivity"
             android:theme="@style/AppTheme.NoActionBar">
+        </activity>
+
+        <activity
+            android:name=".ui.problem.ProblemActivity"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:parentActivityName=".ui.main.MainActivity">
         </activity>
 
     </application>

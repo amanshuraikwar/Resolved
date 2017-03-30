@@ -11,5 +11,7 @@ public class ApiEndpoints {
     public static final String SIGN_UP_USER = BASE_ENDPOINT+"user";
     public static final String GET_PROBLEMS = BASE_ENDPOINT+"getProblems";
     public static final String ADD_PROBLEM = BASE_ENDPOINT+"addProblem";
+    public static final String ADD_COMMENT = BASE_ENDPOINT+"addComment";
+    public static final String GET_COMMENTS = BASE_ENDPOINT+"getComments/%s";
 }
 

@@ -12,6 +12,8 @@ import com.sonu.resolved.ui.login.LoginMvpPresenter;
 import com.sonu.resolved.ui.login.LoginPresenter;
 import com.sonu.resolved.ui.main.MainMvpPresenter;
 import com.sonu.resolved.ui.main.MainPresenter;
+import com.sonu.resolved.ui.problem.ProblemMvpPresenter;
+import com.sonu.resolved.ui.problem.ProblemPresenter;
 
 import dagger.Module;
 import dagger.Provides;
@@ -43,6 +45,12 @@ public class ActivityModule {
 
     @Provides
     @PerActivity
+    LoginPresenter getLoginPresenter(DataManager dataManager) {
+        return new LoginPresenter(dataManager);
+    }
+
+    @Provides
+    @PerActivity
     MainMvpPresenter getMainMvpPresenter(MainPresenter mainPresenter) {
         return mainPresenter;
     }
@@ -55,8 +63,14 @@ public class ActivityModule {
 
     @Provides
     @PerActivity
-    LoginPresenter getLoginPresenter(DataManager dataManager) {
-        return new LoginPresenter(dataManager);
+    ProblemMvpPresenter getProblemMvpPresenter(ProblemPresenter problemPresenter) {
+        return problemPresenter;
+    }
+
+    @Provides
+    @PerActivity
+    ProblemPresenter getProblemPresenter(DataManager dataManager) {
+        return new ProblemPresenter(dataManager);
     }
 
     @Provides
