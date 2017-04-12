@@ -22,8 +22,8 @@ public class AppDataManager implements DataManager{
     }
 
     @Override
-    public Observable<Integer> checkUser(String username, String pasword) {
-        return mApiHelper.checkUser(username, pasword);
+    public Observable<Boolean> checkUserCredentials(String username, String pasword) {
+        return mApiHelper.checkUserCredentials(username, pasword);
     }
 
     @Override
@@ -37,7 +37,7 @@ public class AppDataManager implements DataManager{
     }
 
     @Override
-    public Observable<Integer> signUpUser(String username, String email, String password) {
+    public Observable<Boolean> signUpUser(String username, String email, String password) {
         return mApiHelper.signUpUser(username, email, password);
     }
 

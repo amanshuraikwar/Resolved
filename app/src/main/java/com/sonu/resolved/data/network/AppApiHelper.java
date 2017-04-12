@@ -4,6 +4,11 @@ import android.util.Log;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonPrimitive;
+import com.sonu.resolved.base.RestApiException;
 import com.sonu.resolved.data.network.model.Comment;
 import com.sonu.resolved.data.network.model.Problem;
 import com.sonu.resolved.data.network.model.User;
@@ -32,23 +37,43 @@ public class AppApiHelper implements ApiHelper{
     }
 
     @Override
-    public Observable<Integer> checkUser(final String username, final String pasword) {
-        return Observable.fromCallable(new Callable<Integer>() {
+    public Observable<Boolean> checkUserCredentials(final String username, final String password) {
+        return Observable.fromCallable(new Callable<Boolean>() {
             @Override
-            public Integer call() throws Exception {
-                User user = getUserInfo(username);
-
-                if(user == null) {
-                    return -1;
-                }
-
-                if(user.getPassword().equals(pasword)) {
-                    return 1;
-                }
-
-                return 0;
+            public Boolean call() throws Exception {
+                return checkUserCredentialsValidity(username, password);
             }
         });
+    }
+
+    private boolean checkUserCredentialsValidity(String username, String password) throws IOException, RestApiException{
+        String url = ApiEndpoints.CHECK_USER_CREDENTIALS;
+        Request request = RequestGenerator.post(url,
+                "{\"username\" : \""+username+"\", \"password\" : \""+password+"\"}");
+        String body = mRequestHandler.request(request);
+        Log.i(TAG, "checkUserCredentialsValidity():response-body:"+body);
+
+        JsonObject result = new JsonParser().parse(body).getAsJsonObject();
+
+        Log.i(TAG, "checkUserCredentialsValidity():response-body-json:"+result);
+
+        int statusCode = result.get("status_code").getAsInt();
+
+        Log.i(TAG, "checkUserCredentialsValidity():response-status-code:"+statusCode);
+
+        switch (statusCode) {
+            case 200:
+                Log.i(TAG, "checkUserCredentialsValidity():response-body-json-data:"+result.get("data"));
+
+                if (result.get("data").getAsInt() == 1) {
+                    return true;
+                } else {
+                    return false;
+                }
+            default:
+                throw new RestApiException(statusCode, result.get("status").getAsString(),
+                        result.get("message").getAsString());
+        }
     }
 
     @Override
@@ -56,12 +81,39 @@ public class AppApiHelper implements ApiHelper{
         return Observable.fromCallable(new Callable<Boolean>() {
             @Override
             public Boolean call() throws Exception {
-                User user = getUserInfoByEmail(email);
-
-                return user != null;
+                return checkEmailAvailability(email);
 
             }
         });
+    }
+
+    private boolean checkEmailAvailability(String email) throws IOException, RestApiException{
+        String url = String.format(ApiEndpoints.CHECK_EMAIL_AVAILABILITY, email);
+        Request request = RequestGenerator.get(url);
+        String body = mRequestHandler.request(request);
+        Log.i(TAG, "checkEmailAvailability():response-body:"+body);
+
+        JsonObject result = new JsonParser().parse(body).getAsJsonObject();
+
+        Log.i(TAG, "checkEmailAvailability():response-body-json:"+result);
+
+        int statusCode = result.get("status_code").getAsInt();
+
+        Log.i(TAG, "checkEmailAvailability():response-status-code:"+statusCode);
+
+        switch (statusCode) {
+            case 200:
+                Log.i(TAG, "checkEmailAvailability():response-body-json-data:"+result.get("data"));
+
+                if (result.get("data").getAsInt() == 1) {
+                    return true;
+                } else {
+                    return false;
+                }
+            default:
+                throw new RestApiException(statusCode, result.get("status").getAsString(),
+                        result.get("message").getAsString());
+        }
     }
 
     @Override
@@ -69,25 +121,82 @@ public class AppApiHelper implements ApiHelper{
         return Observable.fromCallable(new Callable<Boolean>() {
             @Override
             public Boolean call() throws Exception {
-                User user = getUserInfo(username);
 
-                return user != null;
+                return checkUsernameAvailability(username);
 
             }
         });
     }
 
+    private boolean checkUsernameAvailability(String username) throws IOException, RestApiException{
+        String url = String.format(ApiEndpoints.CHECK_USERNAME_AVAILABILITY, username);
+        Request request = RequestGenerator.get(url);
+        String body = mRequestHandler.request(request);
+        Log.i(TAG, "checkUsernameAvailability():response-body:"+body);
+
+        JsonObject result = new JsonParser().parse(body).getAsJsonObject();
+
+        Log.i(TAG, "checkUsernameAvailability():response-body-json:"+result);
+
+        int statusCode = result.get("status_code").getAsInt();
+
+        Log.i(TAG, "checkUsernameAvailability():response-status-code:"+statusCode);
+
+        switch (statusCode) {
+            case 200:
+                Log.i(TAG, "checkUsernameAvailability():response-body-json-data:"+result.get("data"));
+
+                if (result.get("data").getAsInt() == 1) {
+                    return true;
+                } else {
+                    return false;
+                }
+            default:
+                throw new RestApiException(statusCode, result.get("status").getAsString(),
+                        result.get("message").getAsString());
+        }
+    }
+
     @Override
-    public Observable<Integer> signUpUser(final String username,
+    public Observable<Boolean> signUpUser(final String username,
                                           final String email,
                                           final String password) {
 
-        return Observable.fromCallable(new Callable<Integer>() {
+        return Observable.fromCallable(new Callable<Boolean>() {
             @Override
-            public Integer call() throws Exception {
-                return addUserToDb(username, email, password);
+            public Boolean call() throws Exception {
+                addUserToDb(username, email, password);
+                return true;
             }
         });
+    }
+
+    private void addUserToDb(String username, String email, String password) throws IOException, RestApiException {
+        String url = ApiEndpoints.ADD_USER;
+        Request request = RequestGenerator.put(url,
+                "{\"username\" : \""+username
+                        +"\", \"email\" : \""+email
+                        +"\", \"password\" : \""+password+"\"}");
+
+        String body = mRequestHandler.request(request);
+
+        Log.i(TAG, "addUserToDb():response-body:"+body);
+
+        JsonObject result = new JsonParser().parse(body).getAsJsonObject();
+
+        Log.i(TAG, "addUserToDb():response-body-json:"+result);
+
+        int statusCode = result.get("status_code").getAsInt();
+
+        Log.i(TAG, "addUserToDb():response-status-code:"+statusCode);
+
+        switch (statusCode) {
+            case 200:
+                Log.i(TAG, "addUserToDb():response:success");
+            default:
+                throw new RestApiException(statusCode, result.get("status").getAsString(),
+                        result.get("message").getAsString());
+        }
     }
 
     @Override
@@ -98,6 +207,23 @@ public class AppApiHelper implements ApiHelper{
                 return getProblemsFromDb();
             }
         });
+    }
+
+    private Problem[] getProblemsFromDb() throws IOException{
+        String url = ApiEndpoints.GET_PROBLEMS;
+        Request request = RequestGenerator.get(url);
+        String body = mRequestHandler.request(request);
+        Log.i(TAG, "getProblemsFromDb():response-body:"+body);
+
+        if(body.equals("null")) {
+            return null;
+        }
+
+        Problem[] problems = new Gson().fromJson(body, Problem[].class);
+
+        //Log.i(TAG, "getUserInfo():user:"+problems[0]);
+
+        return problems;
     }
 
     @Override
@@ -192,36 +318,9 @@ public class AppApiHelper implements ApiHelper{
         return 1;
     }
 
-    private Problem[] getProblemsFromDb() throws IOException{
-        String url = ApiEndpoints.GET_PROBLEMS;
-        Request request = RequestGenerator.get(url);
-        String body = mRequestHandler.request(request);
-        Log.i(TAG, "getProblemsFromDb():response-body:"+body);
 
-        if(body.equals("null")) {
-            return null;
-        }
 
-        Problem[] problems = new Gson().fromJson(body, Problem[].class);
 
-        //Log.i(TAG, "getUserInfo():user:"+problems[0]);
-
-        return problems;
-    }
-
-    private int addUserToDb(String username, String email, String password) throws IOException {
-        String url = ApiEndpoints.SIGN_UP_USER;
-        Request request = RequestGenerator.put(url,
-                "{\"username\" : \""+username
-                        +"\", \"email\" : \""+email
-                        +"\", \"password\" : \""+password+"\"}");
-
-        String body = mRequestHandler.request(request);
-
-        Log.i(TAG, "addUserToDb():response-body:"+body);
-
-        return 1;
-    }
 
     private User getUserInfo(String username) throws IOException{
         String url = String.format(ApiEndpoints.GET_USER_INFO, username);

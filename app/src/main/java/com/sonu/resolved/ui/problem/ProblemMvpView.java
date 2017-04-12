@@ -11,4 +11,6 @@ public interface ProblemMvpView extends BaseMvpView{
     void addCommentToList(Comment comment);
     void removeAllData();
     void refreshComments();
+    void startCommentPostLoading();
+    void stopCommentPostLoading();
 }

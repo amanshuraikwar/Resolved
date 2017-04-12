@@ -35,14 +35,16 @@ public class ProblemPresenter extends BasePresenter<ProblemMvpView> implements P
 
     @Override
     public void addComment(String pid, String commentText) {
-        java.util.Date dt = new java.util.Date();
+        if(!commentText.equals("")) {
+            java.util.Date dt = new java.util.Date();
 
-        DateFormat df= new SimpleDateFormat("yyyy/MM/dd");
-        DateFormat tf= new SimpleDateFormat("HH:mm:ss");
+            DateFormat df= new SimpleDateFormat("yyyy/MM/dd");
+            DateFormat tf= new SimpleDateFormat("HH:mm:ss");
 
-        Log.i(TAG, "addComment():date="+df.format(dt)+";time="+tf.format(dt));
+            Log.i(TAG, "addComment():date="+df.format(dt)+";time="+tf.format(dt));
 
-        addCommentToDb(pid, mDataManager.getSavedUsername(), commentText, df.format(dt), tf.format(dt));
+            addCommentToDb(pid, mDataManager.getSavedUsername(), commentText, df.format(dt), tf.format(dt));
+        }
     }
 
     @Override
@@ -87,7 +89,7 @@ public class ProblemPresenter extends BasePresenter<ProblemMvpView> implements P
                 .subscribe(new Observer<Integer>() {
                     @Override
                     public void onSubscribe(Disposable d) {
-
+                        mMvpView.startCommentPostLoading();
                     }
 
                     @Override
@@ -104,7 +106,7 @@ public class ProblemPresenter extends BasePresenter<ProblemMvpView> implements P
 
                     @Override
                     public void onComplete() {
-
+                        mMvpView.stopCommentPostLoading();
                     }
                 });
     }

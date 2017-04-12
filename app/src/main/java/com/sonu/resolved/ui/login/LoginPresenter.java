@@ -1,9 +1,9 @@
 package com.sonu.resolved.ui.login;
 
-import android.app.Activity;
 import android.util.Log;
 
 import com.sonu.resolved.base.BasePresenter;
+import com.sonu.resolved.base.RestApiException;
 import com.sonu.resolved.data.DataManager;
 import com.sonu.resolved.utils.Checker;
 
@@ -13,6 +13,7 @@ import io.reactivex.Observable;
 import io.reactivex.Observer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.internal.subscriptions.BooleanSubscription;
 import io.reactivex.schedulers.Schedulers;
 
 
@@ -37,33 +38,27 @@ public class LoginPresenter extends BasePresenter<LoginMvpView> implements Login
         if(isValidData(username, null, password)) {
             mMvpView.showLoading();
 
-            Observable<Integer> observable = mDataManager.checkUser(username, password);
+            Observable<Boolean> observable = mDataManager.checkUserCredentials(username, password);
 
             observable
                     .subscribeOn(Schedulers.newThread())
                     .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(new Observer<Integer>() {
+                    .subscribe(new Observer<Boolean>() {
                         @Override
                         public void onSubscribe(Disposable d) {
 
                         }
 
                         @Override
-                        public void onNext(Integer value) {
+                        public void onNext(Boolean value) {
                             Log.i(TAG, "Login:onNext():value="+value);
                             mMvpView.hideLoading();
 
-                            switch (value) {
-                                case 0:
-                                    mMvpView.setPasswordError("incorrect password");
-                                    break;
-                                case 1:
-                                    mMvpView.startMainActivity();
-                                    mDataManager.logInUser(username, null);
-                                    break;
-                                case -1:
-                                    mMvpView.setUserNameError("user does not exist");
-                                    break;
+                            if(value) {
+                                mMvpView.startMainActivity();
+                                mDataManager.logInUser(username, null);
+                            } else {
+                                mMvpView.setPasswordError("incorrect password");
                             }
                         }
 
@@ -71,10 +66,18 @@ public class LoginPresenter extends BasePresenter<LoginMvpView> implements Login
                         public void onError(Throwable e) {
                             Log.e(TAG, "onError:called");
                             e.printStackTrace();
-
                             mMvpView.hideLoading();
+
                             if(e instanceof IOException) {
                                 mMvpView.showErrorSnackBar(e.getLocalizedMessage());
+                            } else if (e instanceof RestApiException) {
+                                switch (((RestApiException)e).getStatusCode()) {
+                                    case 812:
+                                        mMvpView.setUserNameError("user does not exist");
+                                        break;
+                                    default:
+                                        mMvpView.showErrorSnackBar(e.getMessage());
+                                }
                             }
                         }
 
@@ -93,16 +96,57 @@ public class LoginPresenter extends BasePresenter<LoginMvpView> implements Login
         if(isValidData(username, email, password)) {
             mMvpView.showLoading();
 
-            Observable<Boolean> observable = mDataManager.checkIfEmailExists(email);
+            Observable<Boolean> observable = mDataManager.signUpUser(username, email, password);
 
             observable
                     .subscribeOn(Schedulers.newThread())
                     .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(emailExistsObserver);
+                    .subscribe(new Observer<Boolean>() {
+                        @Override
+                        public void onSubscribe(Disposable d) {
 
-            currentUsername = username;
-            currentPassword = password;
-            currentEmail = email;
+                        }
+
+                        @Override
+                        public void onNext(Boolean value) {
+                            Log.i(TAG, "signupClicked:onNext:onNext():value="+value);
+                            mMvpView.hideLoading();
+
+                            if(value) {
+                                mMvpView.startMainActivity();
+                                mDataManager.logInUser(currentUsername, currentEmail);
+                            } else {
+                                mMvpView.showErrorSnackBar("could not sign up");
+                            }
+                        }
+
+                        @Override
+                        public void onError(Throwable e) {
+                            Log.e(TAG, "signupClicked:onError:called");
+                            e.printStackTrace();
+
+                            mMvpView.hideLoading();
+                            if(e instanceof IOException) {
+                                mMvpView.showErrorSnackBar(e.getLocalizedMessage());
+                            } else if (e instanceof RestApiException) {
+                                switch (((RestApiException)e).getStatusCode()) {
+                                    case 811:
+                                        mMvpView.setUserNameError("username already exists");
+                                        break;
+                                    case 810:
+                                        mMvpView.setEmailError("email already exists");
+                                        break;
+                                    default:
+                                        mMvpView.showErrorSnackBar(e.getMessage());
+                                }
+                            }
+                        }
+
+                        @Override
+                        public void onComplete() {
+
+                        }
+                    });
         }
     }
 
@@ -110,128 +154,6 @@ public class LoginPresenter extends BasePresenter<LoginMvpView> implements Login
     public void onDetach() {
 
     }
-
-    private Observer<Boolean> emailExistsObserver =
-            new Observer<Boolean>() {
-                @Override
-                public void onSubscribe(Disposable d) {
-
-                }
-
-                @Override
-                public void onNext(Boolean value) {
-                    Log.i(TAG, "Login:onNext():value="+value);
-                    mMvpView.hideLoading();
-
-                    if(value) {
-                        mMvpView.setEmailError("this email already exists");
-                    } else {
-                        Observable<Boolean> observable = mDataManager.checkIfUsernameExists(currentUsername);
-
-                        observable
-                                .subscribeOn(Schedulers.newThread())
-                                .observeOn(AndroidSchedulers.mainThread())
-                                .subscribe(usernameExistsObserver);
-                    }
-                }
-
-                @Override
-                public void onError(Throwable e) {
-                    Log.e(TAG, "onError:called");
-                    e.printStackTrace();
-
-                    mMvpView.hideLoading();
-                    if(e instanceof IOException) {
-                        mMvpView.showErrorSnackBar(e.getLocalizedMessage());
-                    }
-                }
-
-                @Override
-                public void onComplete() {
-
-                }
-            };
-
-    private Observer<Boolean> usernameExistsObserver =
-            new Observer<Boolean>() {
-                @Override
-                public void onSubscribe(Disposable d) {
-
-                }
-
-                @Override
-                public void onNext(Boolean value) {
-                    Log.i(TAG, "Login:onNext():value="+value);
-                    mMvpView.hideLoading();
-
-                    if(value) {
-                        mMvpView.setUserNameError("this username already exists");
-                    } else {
-                        Observable<Integer> observable = mDataManager.signUpUser(
-                                currentUsername,
-                                currentEmail,
-                                currentPassword);
-
-                        observable
-                                .subscribeOn(Schedulers.newThread())
-                                .observeOn(AndroidSchedulers.mainThread())
-                                .subscribe(signUpUserObserver);
-                    }
-                }
-
-                @Override
-                public void onError(Throwable e) {
-                    Log.e(TAG, "onError:called");
-                    e.printStackTrace();
-
-                    mMvpView.hideLoading();
-                    if(e instanceof IOException) {
-                        mMvpView.showErrorSnackBar(e.getLocalizedMessage());
-                    }
-                }
-
-                @Override
-                public void onComplete() {
-
-                }
-            };
-
-    private Observer<Integer> signUpUserObserver =
-            new Observer<Integer>() {
-                @Override
-                public void onSubscribe(Disposable d) {
-
-                }
-
-                @Override
-                public void onNext(Integer value) {
-                    Log.i(TAG, "Login:onNext():value="+value);
-                    mMvpView.hideLoading();
-
-                    if(value == 1) {
-                        mMvpView.startMainActivity();
-                        mDataManager.logInUser(currentUsername, currentEmail);
-                    } else {
-                        mMvpView.showErrorSnackBar("could not sign up");
-                    }
-                }
-
-                @Override
-                public void onError(Throwable e) {
-                    Log.e(TAG, "onError:called");
-                    e.printStackTrace();
-
-                    mMvpView.hideLoading();
-                    if(e instanceof IOException) {
-                        mMvpView.showErrorSnackBar(e.getLocalizedMessage());
-                    }
-                }
-
-                @Override
-                public void onComplete() {
-
-                }
-            };
 
     private boolean isValidData(String username, String email, String password) {
         boolean returnVal = true;

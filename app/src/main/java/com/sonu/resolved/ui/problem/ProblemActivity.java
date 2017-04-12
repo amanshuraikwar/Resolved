@@ -11,8 +11,11 @@ import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.view.View;
 import android.view.inputmethod.EditorInfo;
+import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.sonu.resolved.MyApplication;
@@ -70,6 +73,12 @@ public class ProblemActivity extends AppCompatActivity implements ProblemMvpView
     @BindView(R.id.problemDataRv)
     RecyclerView problemDataRv;
 
+    @BindView(R.id.postCommentBtn)
+    Button postCommentButton;
+
+    @BindView(R.id.postCommentPb)
+    ProgressBar postCommentPb;
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -100,9 +109,16 @@ public class ProblemActivity extends AppCompatActivity implements ProblemMvpView
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
                 if (actionId == EditorInfo.IME_ACTION_DONE) {
-                    mPresenter.addComment(pid+"", v.getText().toString().trim());
+
                 }
                 return false;
+            }
+        });
+
+        postCommentButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mPresenter.addComment(pid+"", myCommentEt.getText().toString().trim());
             }
         });
 
@@ -162,5 +178,17 @@ public class ProblemActivity extends AppCompatActivity implements ProblemMvpView
     public void refreshComments() {
         myCommentEt.setText("");
         mPresenter.getComments(pid);
+    }
+
+    @Override
+    public void startCommentPostLoading() {
+        postCommentButton.setVisibility(View.GONE);
+        postCommentPb.setVisibility(View.VISIBLE);
+    }
+
+    @Override
+    public void stopCommentPostLoading() {
+        postCommentButton.setVisibility(View.VISIBLE);
+        postCommentPb.setVisibility(View.GONE);
     }
 }

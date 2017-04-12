@@ -10,10 +10,10 @@ import io.reactivex.Observable;
  */
 
 public interface ApiHelper {
-    Observable<Integer> checkUser(String username, String pasword);
+    Observable<Boolean> checkUserCredentials(String username, String password);
     Observable<Boolean> checkIfEmailExists(String email);
     Observable<Boolean> checkIfUsernameExists(String username);
-    Observable<Integer> signUpUser(String username, String email, String password);
+    Observable<Boolean> signUpUser(String username, String email, String password);
     Observable<Problem[]> getProblems();
     Observable<Integer> addProblem(String title, String description, double latitude, double longitude);
     Observable<Integer> addComment(String pid, String username, String commentText, String date, String time);
